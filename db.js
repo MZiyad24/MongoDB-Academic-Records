@@ -24,5 +24,5 @@ export async function connection() {
     return client.db("schooldb") // ur db name
 }
 
-connection();
-process.exit();
+// connection();
+// process.exit();
