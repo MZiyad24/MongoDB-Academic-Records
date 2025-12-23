@@ -2,7 +2,11 @@ import { connection } from "./db.js";
 
 const db = await connection();
 
-const students = await db.collection("students").insertMany([
+const session = db.client.startSession();
+
+try{
+  session.startTransaction();
+  const students = await db.collection("students").insertMany([
     {
         fname:"Ziyad",
         lname:"Mohammed",
@@ -82,168 +86,177 @@ const students = await db.collection("students").insertMany([
         level:3,
         GPA: 2.8,
         department: { faculty: "Computer Science", department_name: "CS" }
-    }]
-)
+    }],{session}
+  )
+  const courses = await db.collection("courses").insertMany([
+      {
+          course_name:"Selected topics",
+          corse_code:"IS417",
+          department_name:"IS"
+      },
+      {
+          course_name:"SOA",
+          corse_code:"IS434",
+          department_name:"IS"
+      },
+      {
+          course_name:"Algorithms",
+          corse_code:"CS235",
+          department_name:"CS"
+      },
+      {
+          course_name:"Compilers",
+          corse_code:"CS408",
+          department_name:"CS"
+      },
+      {
+          course_name:"Information Retrieval",
+          corse_code:"IS396",
+          department_name:"IS"
+      }],{session}
+  )
+  const semesters = await db.collection("semesters").insertMany([
+      {
+          semester_name:"Fall 2025"
+      },
+      {
+          semester_name:"Summer 2025"
+      }],{session}
+  )
+  const enrollments = await db.collection("enrollments").insertMany([
+    {
+      student_id: students.insertedIds[0],
+      course_id: courses.insertedIds[0], // IS417
+      semester_id: semesters.insertedIds[0],
+      grade: "A"
+    },
+    {
+      student_id: students.insertedIds[0],
+      course_id: courses.insertedIds[1], // IS434
+      semester_id: semesters.insertedIds[0],
+      grade: "B"
+    },
+    {
+      student_id: students.insertedIds[1],
+      course_id: courses.insertedIds[0],
+      semester_id: semesters.insertedIds[0],
+      grade: "D"
+    },
+    {
+      student_id: students.insertedIds[1],
+      course_id: courses.insertedIds[4], // IS396
+      semester_id: semesters.insertedIds[0],
+      grade: "C+"
+    },
+    {
+      student_id: students.insertedIds[2],
+      course_id: courses.insertedIds[2], // CS235
+      semester_id: semesters.insertedIds[0],
+      grade: "A+"
+    },
+    {
+      student_id: students.insertedIds[2],
+      course_id: courses.insertedIds[3], // CS408
+      semester_id: semesters.insertedIds[0],
+      grade: "B+"
+    },
+    {
+      student_id: students.insertedIds[3],
+      course_id: courses.insertedIds[2],
+      semester_id: semesters.insertedIds[0],
+      grade: "C"
+    },
+    {
+      student_id: students.insertedIds[3],
+      course_id: courses.insertedIds[3],
+      semester_id: semesters.insertedIds[0],
+      grade: "F"
+    },
+    {
+      student_id: students.insertedIds[4],
+      course_id: courses.insertedIds[2],
+      semester_id: semesters.insertedIds[0],
+      grade: "B"
+    },
+    {
+      student_id: students.insertedIds[4],
+      course_id: courses.insertedIds[3],
+      semester_id: semesters.insertedIds[0],
+      grade: "D"
+    },
+    {
+      student_id: students.insertedIds[5],
+      course_id: courses.insertedIds[0],
+      semester_id: semesters.insertedIds[1],
+      grade: "D"
+    },
+    {
+      student_id: students.insertedIds[5],
+      course_id: courses.insertedIds[1],
+      semester_id: semesters.insertedIds[1],
+      grade: "B"
+    },
+    {
+      student_id: students.insertedIds[6],
+      course_id: courses.insertedIds[2],
+      semester_id: semesters.insertedIds[1],
+      grade: "B+"
+    },
+    {
+      student_id: students.insertedIds[6],
+      course_id: courses.insertedIds[3],
+      semester_id: semesters.insertedIds[1],
+      grade: "A"
+    },
+    {
+      student_id: students.insertedIds[7],
+      course_id: courses.insertedIds[2],
+      semester_id: semesters.insertedIds[1],
+      grade: "A"
+    },
+    {
+      student_id: students.insertedIds[7],
+      course_id: courses.insertedIds[3],
+      semester_id: semesters.insertedIds[1],
+      grade: "D"
+    },
+    {
+      student_id: students.insertedIds[8],
+      course_id: courses.insertedIds[0],
+      semester_id: semesters.insertedIds[1],
+      grade: "F"
+    },
+    {
+      student_id: students.insertedIds[8],
+      course_id: courses.insertedIds[4],
+      semester_id: semesters.insertedIds[1],
+      grade: "A"
+    },
+    {
+      student_id: students.insertedIds[9],
+      course_id: courses.insertedIds[2],
+      semester_id: semesters.insertedIds[1],
+      grade: "B"
+    },
+    {
+      student_id: students.insertedIds[9],
+      course_id: courses.insertedIds[3],
+      semester_id: semesters.insertedIds[1],
+      grade: "C+"
+    }
+  ],{session});
+  await session.commitTransaction();
+  console.log("Data inserted successfully");
+}
+catch(error){
+  await session.abortTransaction();
+  console.log("Failed to insert data");
+}
+finally{
+  session.endSession();
+}
 
-const courses = await db.collection("courses").insertMany([
-    {
-        course_name:"Selected topics",
-        corse_code:"IS417",
-        department_name:"IS"
-    },
-    {
-        course_name:"SOA",
-        corse_code:"IS434",
-        department_name:"IS"
-    },
-    {
-        course_name:"Algorithms",
-        corse_code:"CS235",
-        department_name:"CS"
-    },
-    {
-        course_name:"Compilers",
-        corse_code:"CS408",
-        department_name:"CS"
-    },
-    {
-        course_name:"Information Retrieval",
-        corse_code:"IS396",
-        department_name:"IS"
-    }]
-)
-const semesters = await db.collection("semesters").insertMany([
-    {
-        semester_name:"Fall 2025"
-    },
-    {
-        semester_name:"Summer 2025"
-    }]
-)
-const enrollments = await db.collection("enrollments").insertMany([
-  {
-    student_id: students.insertedIds[0],
-    course_id: courses.insertedIds[0], // IS417
-    semester_id: semesters.insertedIds[0],
-    grade: 3.2
-  },
-  {
-    student_id: students.insertedIds[0],
-    course_id: courses.insertedIds[1], // IS434
-    semester_id: semesters.insertedIds[0],
-    grade: 3.4
-  },
-  {
-    student_id: students.insertedIds[1],
-    course_id: courses.insertedIds[0],
-    semester_id: semesters.insertedIds[0],
-    grade: 3.1
-  },
-  {
-    student_id: students.insertedIds[1],
-    course_id: courses.insertedIds[4], // IS396
-    semester_id: semesters.insertedIds[0],
-    grade: 3.3
-  },
-  {
-    student_id: students.insertedIds[2],
-    course_id: courses.insertedIds[2], // CS235
-    semester_id: semesters.insertedIds[0],
-    grade: 3.6
-  },
-  {
-    student_id: students.insertedIds[2],
-    course_id: courses.insertedIds[3], // CS408
-    semester_id: semesters.insertedIds[0],
-    grade: 3.7
-  },
-  {
-    student_id: students.insertedIds[3],
-    course_id: courses.insertedIds[2],
-    semester_id: semesters.insertedIds[0],
-    grade: 2.9
-  },
-  {
-    student_id: students.insertedIds[3],
-    course_id: courses.insertedIds[3],
-    semester_id: semesters.insertedIds[0],
-    grade: 3.0
-  },
-  {
-    student_id: students.insertedIds[4],
-    course_id: courses.insertedIds[2],
-    semester_id: semesters.insertedIds[0],
-    grade: 3.8
-  },
-  {
-    student_id: students.insertedIds[4],
-    course_id: courses.insertedIds[3],
-    semester_id: semesters.insertedIds[0],
-    grade: 3.9
-  },
-  {
-    student_id: students.insertedIds[5],
-    course_id: courses.insertedIds[0],
-    semester_id: semesters.insertedIds[1],
-    grade: 3.0
-  },
-  {
-    student_id: students.insertedIds[5],
-    course_id: courses.insertedIds[1],
-    semester_id: semesters.insertedIds[1],
-    grade: 3.2
-  },
-  {
-    student_id: students.insertedIds[6],
-    course_id: courses.insertedIds[2],
-    semester_id: semesters.insertedIds[1],
-    grade: 2.7
-  },
-  {
-    student_id: students.insertedIds[6],
-    course_id: courses.insertedIds[3],
-    semester_id: semesters.insertedIds[1],
-    grade: 2.9
-  },
-  {
-    student_id: students.insertedIds[7],
-    course_id: courses.insertedIds[2],
-    semester_id: semesters.insertedIds[1],
-    grade: 3.4
-  },
-  {
-    student_id: students.insertedIds[7],
-    course_id: courses.insertedIds[3],
-    semester_id: semesters.insertedIds[1],
-    grade: 3.5
-  },
-  {
-    student_id: students.insertedIds[8],
-    course_id: courses.insertedIds[0],
-    semester_id: semesters.insertedIds[1],
-    grade: 3.0
-  },
-  {
-    student_id: students.insertedIds[8],
-    course_id: courses.insertedIds[4],
-    semester_id: semesters.insertedIds[1],
-    grade: 3.1
-  },
-  {
-    student_id: students.insertedIds[9],
-    course_id: courses.insertedIds[2],
-    semester_id: semesters.insertedIds[1],
-    grade: 2.8
-  },
-  {
-    student_id: students.insertedIds[9],
-    course_id: courses.insertedIds[3],
-    semester_id: semesters.insertedIds[1],
-    grade: 2.9
-  }
-]);
 
-console.log("Data inserted successfully");
 
 // export {students,courses,semesters,enrollments}
 
