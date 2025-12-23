@@ -33,7 +33,7 @@ console.log("Student email updated");
 //4. Delete a dropped enrollment
 
 const deleteResult = await db.collection("enrollments").deleteOne({
-  grade: { $lt: 2.5 }
+  grade: "F"
 });
 
 console.log("Deleted enrollments:", deleteResult.deletedCount);
@@ -41,7 +41,7 @@ console.log("Deleted enrollments:", deleteResult.deletedCount);
 
 //5. List courses taken by a student
 
-const studentCourses = await db.collection("enrollments").aggregate([
+const allStudentsCourses = await db.collection("enrollments").aggregate([
   {
     $match: { student_id: { $exists: true } }
   },
@@ -54,15 +54,63 @@ const studentCourses = await db.collection("enrollments").aggregate([
     }
   },
   {
+    $unwind : "$course"
+  },
+  {
+    $group: {
+      _id: "$student_id",
+      courses: { $push: "$course.course_name" } // Collect all names into an array
+    }
+  },
+  {
     $project: {
       _id: 0,
-      student_id: 1,
-      "course.course_name": 1,
-      grade: 1
+      student_id: "$_id",
+      courses: 1
     }
   }
 ]).toArray();
 
-console.log("Courses taken by students:", studentCourses);
+console.log("Courses taken by students:", JSON.stringify(allStudentsCourses, null, 2));
 
+const get_id = await db.collection("students").findOne(
+  {
+    level: 3
+  },
+  {
+    projection: { _id: 1 }
+  }
+);
+const studentID = get_id._id;  // change with the desired id
+const specificStudentCourses = await db.collection("enrollments").aggregate([
+  {
+    $match: { student_id: studentID }
+  },
+  {
+    $lookup: {
+      from: "courses",
+      localField: "course_id",
+      foreignField: "_id",
+      as: "course"
+    }
+  },
+  {
+    $unwind : "$course"
+  },
+  {
+    $group:{
+      _id:"$student_id",
+      courses : {$push:"$course.course_name"}
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      student_id: "$_id",
+      courses: 1
+    }
+  }
+]).toArray();
+
+console.log("Courses taken by ", get_id, ": ", JSON.stringify(specificStudentCourses, null, 2));
 process.exit();
