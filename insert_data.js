@@ -1,11 +1,13 @@
 import { connection } from "./db.js";
 
-const db = await connection();
-
-const session = db.client.startSession();
-
-try{
-  session.startTransaction();
+async function insertData() {
+  let db;
+  let session;
+  
+  try {
+    db = await connection();
+    session = db.client.startSession();
+    session.startTransaction();
   const students = await db.collection("students").insertMany([
     {
         fname:"Ziyad",
@@ -91,35 +93,37 @@ try{
   const courses = await db.collection("courses").insertMany([
       {
           course_name:"Selected topics",
-          corse_code:"IS417",
+          course_code:"IS417",
           department_name:"IS"
       },
       {
           course_name:"SOA",
-          corse_code:"IS434",
+          course_code:"IS434",
           department_name:"IS"
       },
       {
           course_name:"Algorithms",
-          corse_code:"CS235",
+          course_code:"CS235",
           department_name:"CS"
       },
       {
           course_name:"Compilers",
-          corse_code:"CS408",
+          course_code:"CS408",
           department_name:"CS"
       },
       {
           course_name:"Information Retrieval",
-          corse_code:"IS396",
+          course_code:"IS396",
           department_name:"IS"
       }],{session}
   )
   const semesters = await db.collection("semesters").insertMany([
       {
+          name:"Fall 2025",
           semester_name:"Fall 2025"
       },
       {
+          name:"Summer 2025",
           semester_name:"Summer 2025"
       }],{session}
   )
@@ -245,19 +249,39 @@ try{
       grade: "C+"
     }
   ],{session});
-  await session.commitTransaction();
-  console.log("Data inserted successfully");
+    await session.commitTransaction();
+    return {
+      success: true,
+      inserted: {
+        students: students.insertedCount,
+        courses: courses.insertedCount,
+        semesters: semesters.insertedCount,
+        enrollments: enrollments.insertedCount
+      },
+      ids: {
+        studentIds: Object.values(students.insertedIds),
+        courseIds: Object.values(courses.insertedIds),
+        semesterIds: Object.values(semesters.insertedIds),
+        enrollmentIds: Object.values(enrollments.insertedIds)
+      }
+    };
+  }
+  catch(error){
+    await session.abortTransaction();
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+  finally{
+    if (session) {
+      session.endSession();
+    }
+    if (db) {
+      await db.client.close();
+    }
+    process.exit();
+  }
 }
-catch(error){
-  await session.abortTransaction();
-  console.log("Failed to insert data");
-}
-finally{
-  session.endSession();
-}
 
-
-
-// export {students,courses,semesters,enrollments}
-
-process.exit()
+insertData().catch(console.error);
